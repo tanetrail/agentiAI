@@ -1,0 +1,57 @@
+## this file should be under mainfolder(ML_Drift_Detection) -> .github/workflows ->ci.yml
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - aditya_dev  # CI will run on this branch
+  pull_request:
+    branches:
+      - main
+      - aditya_dev  # Run tests on PRs made to these branches
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8  # You can change the Python version if needed
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
+
+  merge-to-main:
+    needs: test  # Only run if the 'test' job succeeds
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Fetch main branch
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
+
+      - name: Merge changes to main
+        run: |
+          git merge aditya_dev --no-ff --allow-unrelated-histories --commit -m "Auto-merge from aditya_dev to main"
+          git push origin main
